@@ -20,6 +20,9 @@ SCOPES = [
     "openid",
 ]
 
+FRONTEND_URL = "https://mini-ai-powered-email-assistant.vercel.app"   # 🔥 live domain
+
+
 @router.get("/google/login-url")
 def google_login_url():
     flow = Flow.from_client_config(
@@ -42,6 +45,7 @@ def google_login_url():
     )
     return {"url": auth_url}
 
+
 @router.get("/google/callback")
 def google_callback(request: Request, code: str | None = None):
     if not code:
@@ -60,17 +64,15 @@ def google_callback(request: Request, code: str | None = None):
         scopes=SCOPES,
     )
     flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
-
     flow.fetch_token(code=code)
     credentials = flow.credentials
 
     # Get user info
-    userinfo_response = http_requests.get(
+    userinfo = http_requests.get(
         "https://www.googleapis.com/oauth2/v2/userinfo",
         headers={"Authorization": f"Bearer {credentials.token}"},
         timeout=10,
-    )
-    userinfo = userinfo_response.json()
+    ).json()
 
     user_session = UserSession(
         email=userinfo.get("email"),
@@ -85,15 +87,17 @@ def google_callback(request: Request, code: str | None = None):
     session_id = str(uuid4())
     save_session(session_id, user_session.dict())
 
-    response = RedirectResponse(url="http://localhost:3000/dashboard")
+    # 🔥 Cookie fixes for cross-domain login
+    response = RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
     response.set_cookie(
         key="session_id",
         value=session_id,
         httponly=True,
-        secure=False,  # set True on production HTTPS
-        samesite="lax",
+        secure=True,       # production HTTPS required
+        samesite="None",   # cross-site cookies required for Vercel <-> Render
     )
     return response
+
 
 @router.get("/me")
 def get_me(request: Request):
@@ -110,6 +114,7 @@ def get_me(request: Request):
         "name": session.get("name"),
         "picture": session.get("picture"),
     }
+
 
 @router.post("/logout")
 def logout(request: Request):
