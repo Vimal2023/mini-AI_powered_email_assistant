@@ -9,7 +9,8 @@ from .utils.error_handler import http_error_handler
 app = FastAPI(title="Constructure AI Email Assistant API")
 
 origins = [
-    "http://localhost:3000",  # frontend dev
+    "http://localhost:3000",  # dev
+    "https://mini-ai-powered-email-assistant.vercel.app",  # production frontend
 ]
 
 app.add_middleware(
@@ -28,5 +29,4 @@ app.include_router(chatbot.router, prefix="/chat")
 def root():
     return {"status": "ok"}
 
-# generic error handler
 app.add_exception_handler(Exception, http_error_handler)
