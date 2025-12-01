@@ -1,14 +1,14 @@
 import google.generativeai as genai
 from app.config import settings
 
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
 def call_gemini(prompt: str):
-    res = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt
+    response = genai.generate(
+        model="gemini-pro",
+        prompt=prompt
     )
-    return res.text
+    return response.text
 
 async def summarize_email(body: str):
     prompt = f"Summarize this email in 2 lines:\n\n{body}"
